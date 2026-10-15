@@ -84,6 +84,7 @@ video:focus-visible, [tabindex="0"]:focus-visible {
 }
 .button:hover { background: #222222; color: white; text-decoration: none; }
 .button-icon { display: block; width: 17px; height: 17px; object-fit: contain; filter: brightness(0) invert(1); }
+.button-icon.brand-icon { width: 20px; height: 20px; filter: none; }
 .section-nav { display: flex; justify-content: center; gap: 24px; margin-top: 20px; font-size: 14px; }
 .section-nav a { color: var(--muted); }
 

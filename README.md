@@ -4,6 +4,7 @@ Project website for **ATTUNER: Recomputation-Free KV Cache Reuse via Query-Side 
 
 - [Project page](https://skycxh.github.io/attuner-project-page/)
 - [Paper](https://arxiv.org/abs/2609.36722)
+- [Hugging Face Paper](https://huggingface.co/papers/2609.36722)
 - [Research code](https://github.com/EIT-NLP/Attuner-Recomputation-free-KV-Reuse)
 
 This is a static website with original paper figures and a recorded BigCodeBench terminal demonstration.
