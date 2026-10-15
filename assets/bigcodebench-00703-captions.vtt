@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:00.232
+Same request; 16 cached skills, including 14 distractors. Original-speed playback.
+
+00:00:00.232 --> 00:00:02.056
+PIC and Attuner have received their first tokens. Full is still prefilling.
+
+00:00:02.056 --> 00:00:03.898
+Full receives its first token at 2056.08 ms; Attuner at 231.64 ms.
+
+00:00:03.898 --> 00:00:06.010
+Attuner has completed generation. Full and PIC are still generating.
+
+00:00:06.010 --> 00:00:11.153
+Full has completed generation. PIC continues its longer response.
+
+00:00:11.153 --> 00:00:13.340
+Official tests execute after generation. Test time is excluded from TTFT.

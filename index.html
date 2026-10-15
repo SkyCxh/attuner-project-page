@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="ATTUNER learns to read independently cached artifacts through query-side adaptation, preserving original artifact KV at near-PIC latency.">
+  <title>ATTUNER — Learning to Read a Frozen Cache</title>
+  <link rel="stylesheet" href="styles.css?v=two-line-title-20261015">
+  <script src="app.js?v=evidence-analysis-20261015" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<main id="main">
+<header class="hero section-width" id="top" aria-labelledby="hero-title">
+  <h1 id="hero-title">
+    <span class="project-name">ATTUNER:</span>
+    <span class="paper-title">Recomputation-Free KV Cache Reuse<br class="desktop-break"> via Query-Side Adaptation</span>
+  </h1>
+  <div class="authors" role="group" aria-label="Authors">
+    <div class="author-row">
+      <span><a href="https://skycxh.github.io/" target="_blank" rel="noopener noreferrer">Xinghao Chen</a><sup>1,2,3†</sup></span>
+      <span><a href="https://junnandong.github.io/" target="_blank" rel="noopener noreferrer">Junnan Dong</a><sup>3†</sup></span>
+      <span><a href="https://scholar.google.com/citations?hl=zh-CN&amp;user=95s84_oAAAAJ&amp;view_op=list_works&amp;sortby=pubdate" target="_blank" rel="noopener noreferrer">Cai Ke</a><sup>3</sup></span>
+      <span><a href="https://scholar.google.com.hk/citations?user=tv7RFsMAAAAJ&amp;hl=en" target="_blank" rel="noopener noreferrer">Chak Tou Leong</a><sup>2</sup></span>
+      <span>Haocheng Sun<sup>3</sup></span>
+    </div>
+    <div class="author-row">
+      <span>Keyu Chen<sup>3</sup></span>
+      <span>Siyu An<sup>3</sup></span>
+      <span><a href="https://scholar.google.com/citations?user=IChV8y0AAAAJ&amp;hl=en" target="_blank" rel="noopener noreferrer">Ruizhi Qiao</a><sup>3</sup></span>
+      <span><a href="https://scholar.google.com/citations?user=IUtix9IAAAAJ&amp;hl=en" target="_blank" rel="noopener noreferrer">Xing Sun</a><sup>3</sup></span>
+      <span><a href="https://polyunlp.github.io/home" target="_blank" rel="noopener noreferrer">Wenjie Li</a><sup>2</sup></span>
+      <span><a href="https://idt.eitech.edu.cn/nlp/#/news" target="_blank" rel="noopener noreferrer">Xiaoyu Shen</a><sup>1‡</sup></span>
+    </div>
+  </div>
+  <div class="affiliations" aria-label="Author affiliations">
+    <p class="affiliation-row">
+      <span class="affiliation-item"><span class="affiliation-mark mark-eit" aria-hidden="true"><img src="assets/logo-eit-nlp.png" width="1672" height="941" alt=""></span><span class="affiliation-name"><sup>1</sup>EIT-NLP Lab, Eastern Institute of Technology, Ningbo</span></span>
+    </p>
+    <p class="affiliation-row">
+      <span class="affiliation-item"><span class="affiliation-mark mark-polyu" aria-hidden="true"><img src="assets/logo-polyu.png" width="64" height="64" alt=""></span><span class="affiliation-name"><sup>2</sup>The Hong Kong Polytechnic University</span></span>
+      <span class="affiliation-item"><span class="affiliation-mark mark-youtu" aria-hidden="true"><img src="assets/logo-tencent-youtu.png" width="834" height="133" alt=""></span><span class="affiliation-name"><sup>3</sup>Tencent Youtu Lab</span></span>
+    </p>
+  </div>
+  <p class="author-notes">† Equal contribution <span aria-hidden="true">·</span> ‡ Corresponding author</p>
+  <div class="hero-actions">
+    <a class="button" href="https://arxiv.org/abs/2609.36722" target="_blank" rel="noopener noreferrer"><img class="button-icon" src="assets/icon-paper.svg" width="17" height="17" alt="" aria-hidden="true">Paper</a>
+    <a class="button" href="https://github.com/EIT-NLP/Attuner-Recomputation-free-KV-Reuse" target="_blank" rel="noopener noreferrer"><img class="button-icon" src="assets/icon-code.svg" width="17" height="17" alt="" aria-hidden="true">Code</a>
+    <a class="button" href="#demo"><img class="button-icon" src="assets/icon-demo.svg" width="17" height="17" alt="" aria-hidden="true">Demo</a>
+  </div>
+  <nav class="section-nav" aria-label="Page sections">
+    <a href="#method">Method</a><a href="#results">Results</a><a href="#analysis">Analysis</a><a href="#citation">BibTeX</a>
+  </nav>
+</header>
+
+<section id="demo" class="demo-section">
+  <div class="section-width">
+    <div class="section-heading">
+      <h2>Demo</h2>
+    </div>
+    <div class="demo-shell">
+      <div class="demo-toolbar"><div><strong>BigCodeBench</strong><span class="toolbar-separator">/</span><span>Qwen3-4B</span></div><span class="demo-type">Three terminals · synchronized · 1×</span></div>
+      <video id="demo-video" controls playsinline preload="metadata" poster="assets/bigcodebench-00703-poster.jpg" aria-label="Three side-by-side real terminals for Full, PIC and merged Attuner, synchronized to request start at original speed">
+        <source src="assets/bigcodebench-00703-comparison.mp4" type="video/mp4">
+        <track kind="captions" src="assets/bigcodebench-00703-captions.vtt" srclang="en" label="English">
+        Your browser does not support video. <a href="assets/bigcodebench-00703-comparison.mp4">Download the demo.</a>
+      </video>
+    </div>
+
+  </div>
+</section>
+
+<section id="method" class="method-section section-width">
+  <div class="section-heading">
+    <h2>ATTUNER: Learning to Read a Frozen Cache</h2>
+  </div>
+  <p class="paper-summary">ATTUNER adapts online queries while preserving independently constructed artifact KV, learning to read the cache without rewriting it.</p>
+  <figure class="paper-figure ">
+    <a href="assets/paper-overview.png" target="_blank" rel="noopener" aria-label="View figure at full size">
+      <img src="assets/paper-overview.png" width="1586" height="410" loading="lazy" alt="Three approaches to reusable artifact caching: inference-time correction, cache-side training, and query-side adaptation with frozen artifact KV.">
+    </a>
+    <figcaption><strong>Three approaches to reusable artifact caching.</strong> Inference-time adaptation repairs cached states or adjusts attention; cache-side training modifies cache construction. ATTUNER adapts online queries while preserving artifact KV.</figcaption>
+  </figure>
+
+  <div class="paper-subsection">
+    <h3>Query Adaptation with Fixed Artifact KV</h3>
+    <p>Queries are computed for online tokens, while cached keys and values remain available for direct reuse. ATTUNER augments the frozen query projection in every Transformer layer with a low-rank update. Stored artifact KV remains unchanged; online states and newly produced KV evolve under the adapted computation.</p>
+  </div>
+  <figure class="paper-figure ">
+    <a href="assets/paper-inference.png" target="_blank" rel="noopener" aria-label="View figure at full size">
+      <img src="assets/paper-inference.png" width="1463" height="221" loading="lazy" alt="Paper inference workflow: offline artifact prefill and CPU memory storage, followed by KV loading and assembly, online prefill, and decoding.">
+    </a>
+    <figcaption><strong>Inference workflow of ATTUNER.</strong> Artifact KV is prepared once and reused unchanged. Warm-cache TTFT includes KV loading and assembly, online prefill, and first-token selection, excluding offline cache construction.</figcaption>
+  </figure>
+
+  <div class="paper-subsection">
+    <h3>Learning from Full-Context Behavior</h3>
+    <p>We distill Full-context answering behavior into the PIC student. Both branches receive the same input and condition on the same response prefix, but the teacher uses full prefill while the student reuses independently cached artifact KV. Only query adapters are updated; the backbone and cached artifact KV remain frozen.</p>
+  </div>
+  <figure class="paper-figure ">
+    <a href="assets/paper-training.png" target="_blank" rel="noopener" aria-label="View figure at full size">
+      <img src="assets/paper-training.png" width="4193" height="772" loading="lazy" alt="The paper training diagram: a frozen Full-context teacher supervises a PIC student through output-distribution KL, updating only query adapters.">
+    </a>
+    <figcaption><strong>Training ATTUNER.</strong> A frozen Full-context teacher supervises the PIC student’s output distributions. At deployment, the trained updates are merged into the query projections, requiring no Full-context teacher.</figcaption>
+  </figure>
+</section>
+
+<section id="results" class="results-section">
+  <div class="section-width">
+    <div class="section-heading"><h2>Main Results</h2></div>
+    <div class="paper-subsection result-conclusion">
+      <h3>ATTUNER recovers quality within and beyond the training tasks.</h3>
+      <p>A single adapter improves the use of skills, documents, and memories while preserving their original cached KV. Average in-domain scores improve over PIC by <strong>5.13 and 7.77 points</strong> on Qwen3-4B and Qwen3-8B, reducing the gaps to Full to 1.61 and 0.51 points. The benefits also extend to TheoremQA and CHAMP, neither of which is included in adapter training.</p>
+    </div>
+    <div class="results-tabs" role="tablist" aria-label="Paper result tables">
+      <button type="button" id="tab-indomain" role="tab" aria-selected="true" aria-controls="results-indomain" tabindex="0">In-domain</button>
+      <button type="button" id="tab-outofdomain" role="tab" aria-selected="false" aria-controls="results-outofdomain" tabindex="-1">Out-of-domain</button>
+    </div>
+    <div id="results-indomain" class="results-panel" role="tabpanel" aria-labelledby="tab-indomain">
+      <figure class="paper-figure paper-table">
+        <div class="paper-table-scroll" tabindex="0" role="region" aria-label="In-domain table; scroll horizontally on small screens">
+          <a href="assets/paper-results-indomain.png" target="_blank" rel="noopener" aria-label="Open the complete in-domain results table at full size">
+            <img src="assets/paper-results-indomain.png" width="1725" height="1421" loading="lazy" alt="Original paper table comparing Full, PIC, APE, EPIC, CacheBlend, AgentKVShift, KVLink, COMB, and ATTUNER on Qwen3-4B and Qwen3-8B. ATTUNER reaches average scores of 51.33 and 51.96 with 1.79× and 2.45× speedup over Full.">
+          </a>
+        </div>
+        <figcaption><strong>In-domain quality and efficiency.</strong> BigCodeBench (BCB), MuSiQue (MSQ), and PersonaMem-v2 (PMem). Original paper Table 12, including all comparison methods and both model sizes.</figcaption>
+      </figure>
+    </div>
+    <div id="results-outofdomain" class="results-panel" role="tabpanel" aria-labelledby="tab-outofdomain" hidden>
+      <figure class="paper-figure paper-table ood-table">
+        <div class="paper-table-scroll" tabindex="0" role="region" aria-label="Out-of-domain table; scroll horizontally on small screens">
+          <a href="assets/paper-results-outofdomain.png" target="_blank" rel="noopener" aria-label="Open the complete out-of-domain results table at full size">
+            <img src="assets/paper-results-outofdomain.png" width="1442" height="1421" loading="lazy" alt="Original paper out-of-domain table for TheoremQA and CHAMP, neither included in adapter training. ATTUNER averages 68.49 and 62.70 on Qwen3-4B and Qwen3-8B with 2.48× and 3.73× speedup over Full.">
+          </a>
+        </div>
+        <figcaption><strong>Out-of-domain quality and efficiency.</strong> TheoremQA (TQA) and CHAMP (CHP). Original paper Table 13, with tasks excluded from adapter training.</figcaption>
+      </figure>
+    </div>
+    <p class="results-note">Scores in %. TTFT is median warm-cache latency in ms, measured at batch size 1 without concurrent GPU workloads. Bold and underlined values retain the paper’s rankings. Select a table to view it at full size. <a href="https://arxiv.org/abs/2609.36722" target="_blank" rel="noopener noreferrer">Read the paper ↗</a></p>
+    <div class="paper-subsection result-conclusion">
+      <h3>ATTUNER recovers quality at near-PIC latency.</h3>
+      <p>With query updates merged into the projection weights, ATTUNER’s geometric-mean in-domain TTFT is only 1.8% and 0.5% higher than PIC on Qwen3-4B and Qwen3-8B, preserving <strong>1.79× and 2.45× speedups over Full</strong>. ATTUNER requires neither online token selection nor artifact-token recomputation.</p>
+    </div>
+    <figure class="paper-figure tradeoff-figure">
+    <a href="assets/paper-quality-efficiency.png" target="_blank" rel="noopener" aria-label="View figure at full size">
+      <img src="assets/paper-quality-efficiency.png" width="1749" height="1121" loading="lazy" alt="Original paper quality–efficiency plot on Qwen3-4B, comparing in-domain and out-of-domain task quality against speedup over Full.">
+    </a>
+    <figcaption><strong>Quality–efficiency trade-off.</strong> Quality versus speedup on Qwen3-4B. Shaded regions indicate lower quality and speed than ATTUNER.</figcaption>
+  </figure>
+    <p class="paper-summary paper-takeaway">These results highlight query-side adaptation as an effective path toward high-quality, efficient cache reuse: <strong>learning to read the cache rather than rewriting it.</strong></p>
+  </div>
+</section>
+
+<section id="analysis" class="analysis-section section-width">
+  <div class="section-heading">
+    <h2>Evidence and Analysis</h2>
+    <p>Understanding quality loss, recovery, and learned cache reading.</p>
+  </div>
+
+  <article class="analysis-block">
+    <div class="paper-subsection">
+      <h3>Quality loss persists even when relevant artifacts are provided.</h3>
+      <p>PIC is more sensitive to distractors than Full. Removing irrelevant candidates still leaves substantial gaps on multi-artifact tasks, and position alignment does not consistently close them. These observations motivate improving how the model reads independently cached context.</p>
+    </div>
+    <figure class="paper-figure">
+      <a href="assets/paper-pic-observations.png" target="_blank" rel="noopener" aria-label="View the quality-loss bar chart at full size">
+        <img src="assets/paper-pic-observations.png" width="2173" height="530" loading="lazy" alt="Original paper bar charts on Qwen3-4B: increasing distractors reduces PIC quality more sharply than Full; quality gaps remain on relevant-only multi-artifact tasks. Diamonds show TTFT speedup.">
+      </a>
+      <figcaption><strong>Task quality and TTFT speedup on Qwen3-4B.</strong> Left: increasing distractors while retaining relevant artifacts. Right: only task-annotated relevant artifacts are provided.</figcaption>
+    </figure>
+  </article>
+
+  <article class="analysis-block">
+    <div class="paper-subsection">
+      <h3>Restoring routing recovers quality with cached values.</h3>
+      <p>The routing oracle replaces online attention weights with a Full reference while retaining PIC’s artifact KV. In this MuSiQue example, output cosine similarity to Full increases from <strong>0.898 to 0.984</strong>. Paired task evaluations also recover approximately Full performance. This diagnostic uses Full-reference attention; ATTUNER learns cache reading without requiring that reference at deployment.</p>
+    </div>
+    <figure class="paper-figure">
+      <a href="assets/paper-routing-oracle.png" target="_blank" rel="noopener" aria-label="View routing-oracle heatmaps at full size">
+        <img src="assets/paper-routing-oracle.png" width="2340" height="569" loading="lazy" alt="Four original paper heatmaps for one MuSiQue example: cached-value, attention-weight, and attention-output similarity between Full and PIC, followed by output similarity between Full and the routing oracle. Restoring routing increases output alignment without replacing artifact KV.">
+      </a>
+      <figcaption><strong>Routing recovery with unchanged artifact KV.</strong> Full–PIC similarity for cached values, artifact attention, and attention outputs; the final panel compares Full and oracle outputs.</figcaption>
+    </figure>
+  </article>
+
+  <article class="analysis-block">
+    <div class="paper-subsection">
+      <h3>Query adaptation improves attention-output alignment.</h3>
+      <p>On 128 examples per dataset, learned queries bring attention outputs closer to Full across many intermediate layers, at both prompt and answer positions. Mean answer-position cosine similarity rises from <strong>0.903 to 0.927</strong> on MuSiQue and from <strong>0.932 to 0.949</strong> on BigCodeBench, despite training only on output distributions. Recovery is not uniform across layers.</p>
+    </div>
+    <figure class="paper-figure">
+      <a href="assets/paper-output-alignment.png" target="_blank" rel="noopener" aria-label="View training alignment curves at full size">
+        <img src="assets/paper-output-alignment.png" width="2634" height="709" loading="lazy" alt="Four original cosine-similarity plots comparing attention outputs before and after ATTUNER training on Qwen3-4B. First two panels show online prompt positions for MuSiQue and BigCodeBench; last two show teacher-forced answer positions.">
+      </a>
+      <figcaption><strong>Attention outputs before and after training.</strong> First pair: online prompt positions. Second pair: teacher-forced answer positions. Each pair shows MuSiQue followed by BigCodeBench.</figcaption>
+    </figure>
+  </article>
+
+  <div class="ablation-grid">
+    <article class="ablation-card">
+      <h3>More data progressively closes the quality gap.</h3>
+      <p>Limited training data already enables substantial recovery. Additional examples bring performance closer to the paired Full references.</p>
+      <figure class="paper-figure">
+        <a href="assets/paper-training-scale.png" target="_blank" rel="noopener" aria-label="View the training-data scale ablation at full size">
+          <img src="assets/paper-training-scale.png" width="775" height="551" loading="lazy" alt="Original Qwen3-4B training-data scale plot: MuSiQue F1 and BigCodeBench pass@1 improve as training examples increase; dashed and dotted lines show the corresponding Full baselines.">
+        </a>
+        <figcaption><strong>Training-data scale on Qwen3-4B.</strong> Zero examples denotes PIC. Lines mark paired Full references. BigCodeBench varies both data volume and composition.</figcaption>
+      </figure>
+    </article>
+
+    <article class="ablation-card">
+      <h3>The gains reflect adaptation to PIC.</h3>
+      <p>Two 18-layer windows both recover quality on 128 MuSiQue test examples; their difference is inconclusive. The same full-layer adapter improves PIC on every task below, while its effect under Full is mixed.</p>
+      <figure class="paper-figure">
+        <a href="assets/paper-adapter-controls.png" target="_blank" rel="noopener" aria-label="View the original adapter-control ablation table at full size">
+          <img src="assets/paper-adapter-controls.png" width="954" height="1000" loading="lazy" alt="Original paper Table 3. Layer-range controls on MuSiQue: PIC F1 is 49.00, versus 65.14 for L16–33 and 63.34 for L18–35. Under the same full-layer adapter, gains are larger for PIC than Full on BigCodeBench, MuSiQue, PersonaMem-v2, and CHAMP.">
+        </a>
+        <figcaption><strong>Adapter controls on Qwen3-4B.</strong> Top: layer ranges trained on 1,024 MuSiQue examples. Bottom: the same L0–35 adapter under Full and PIC. The panels use different training and evaluation sets.</figcaption>
+      </figure>
+    </article>
+  </div>
+</section>
+
+<section id="citation" class="citation-section section-width">
+  <h2>BibTeX</h2>
+  <p>If Attuner is useful for your research, please cite our paper.</p>
+  <div class="citation-block"><div class="citation-toolbar"><span>BibTeX</span><button id="copy-citation" type="button">Copy citation</button></div><pre id="bibtex">@misc{chen2026attunerrecomputationfreekvcache,
+  title={ATTUNER: Recomputation-Free KV Cache
+         Reuse via Query-Side Adaptation},
+  author={Xinghao Chen and Junnan Dong and Cai Ke
+    and Chak Tou Leong and Haocheng Sun and Keyu Chen
+    and Siyu An and Ruizhi Qiao and Xing Sun
+    and Wenjie Li and Xiaoyu Shen},
+  year={2026},
+  eprint={2609.36722},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2609.36722}
+}</pre><span class="sr-only" id="copy-status" role="status"></span></div>
+</section>
+</main>
+<footer class="site-footer">
+  <p>Website design inspired by <a href="https://openvla.github.io/" target="_blank" rel="noopener noreferrer">OpenVLA</a> and <a href="https://nerfies.github.io/" target="_blank" rel="noopener noreferrer">Nerfies</a>.</p>
+  <p><a href="https://arxiv.org/abs/2609.36722" target="_blank" rel="noopener noreferrer">Paper</a> · <a href="https://github.com/EIT-NLP/Attuner-Recomputation-free-KV-Reuse" target="_blank" rel="noopener noreferrer">Code</a> · <a href="#top">Back to top</a></p>
+</footer>
+</body>
+</html>

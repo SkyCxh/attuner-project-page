@@ -1,0 +1,11 @@
+{
+  "duration_seconds": 40.696816,
+  "fps": 20,
+  "width": 1280,
+  "height": 800,
+  "recording_speed": 1,
+  "source": "real PTY stdout with original monotonic timestamps",
+  "trim": "setup only, before the recorded inference boundary",
+  "time_compression": false,
+  "frames": 815
+}

@@ -1,0 +1,81 @@
+{
+  "protocol": {
+    "task_id": "bigcodebench_00703",
+    "model": "Qwen3-4B",
+    "adapter": "mixed12k imported Qwen3-4B L0-35; rank 8, alpha 16",
+    "dtype": "bfloat16",
+    "batch_size": 1,
+    "methods": [
+      "Full",
+      "PIC",
+      "Attuner (merged)"
+    ],
+    "concurrent_gpu_generations": false,
+    "generation": "greedy; thinking disabled",
+    "warmup_requests": 5,
+    "maximum_new_tokens": 1024,
+    "cache_storage": "pageable CPU RAM",
+    "input_dataset": "data/prepared/distractor_nosep_sample200_v3/bigcodebench/a16.jsonl",
+    "prompt_tokens": 16790,
+    "artifact_count": 16,
+    "distractor_count": 14,
+    "task_description": "Perform DBSCAN clustering on the data by transforming it into a DataFrame and recording the clusters in a new column named 'Cluster'. Please choose the parameters eps=3 and min_samples=2.",
+    "cache_dir": null,
+    "fixed_prefix_tokens": 12,
+    "separators": "none",
+    "ttft_includes": [
+      "CPU cache lookup",
+      "H2D transfer",
+      "KV assembly",
+      "online prefill",
+      "first-token selection"
+    ],
+    "ttft_excludes": [
+      "model loading",
+      "tokenization",
+      "offline cache construction",
+      "tests"
+    ],
+    "decode_rate": "live wall time, including token decoding and terminal output",
+    "sample_selection": "Short DBSCAN task from the pre-existing 16-skill distractor cohort; context length near the cohort median; actual outcomes not predetermined.",
+    "video_speed": "original terminal timestamps, 1x; no time compression"
+  },
+  "methods": [
+    {
+      "method": "Full",
+      "method_key": "full",
+      "ttft_ms": 2056.0797471553087,
+      "generation_seconds": 6.010067345108837,
+      "output_tokens": 107,
+      "live_decode_tokens_per_second": 26.808379483755232,
+      "passed": true,
+      "recorded_result": "pass",
+      "code": "import pandas as pd\nfrom sklearn.cluster import DBSCAN\ndef task_func(data, cols):\n    # Convert input data to a DataFrame\n    df = pd.DataFrame(data, columns=cols)\n    \n    # Initialize DBSCAN with the specified parameters\n    dbscan = DBSCAN(eps=3, min_samples=2)\n    \n    # Fit the model to the data and add cluster labels to the DataFrame\n    df['Cluster'] = dbscan.fit_predict(df[cols])\n    \n    return df",
+      "ttft_speedup": 1.0
+    },
+    {
+      "method": "PIC",
+      "method_key": "pic",
+      "ttft_ms": 232.32688335701823,
+      "generation_seconds": 11.152552903164178,
+      "output_tokens": 294,
+      "live_decode_tokens_per_second": 26.83094649035241,
+      "passed": false,
+      "recorded_result": "fail",
+      "code": "import pandas as pd\nfrom sklearn.cluster import DBSCAN\nimport numpy as np\ndef task_func(data, cols):\n    # Convert the input data to a numpy array\n    data_array = data[cols].values\n    dbscan = DBSCAN(eps=3, min_samples=2)\n    clusters = dbscan.fit_predict(data_array)\n    data['Cluster'] = clusters\n    return data",
+      "ttft_speedup": 8.849943310244116
+    },
+    {
+      "method": "Attuner (merged)",
+      "method_key": "pic_attuner",
+      "ttft_ms": 231.6422830335796,
+      "generation_seconds": 3.8984059849753976,
+      "output_tokens": 100,
+      "live_decode_tokens_per_second": 26.999285486428345,
+      "passed": true,
+      "recorded_result": "pass",
+      "code": "import pandas as pd\nfrom sklearn.cluster import DBSCAN\ndef task_func(data, cols):\n    # Convert the data to a DataFrame\n    df = pd.DataFrame(data, columns=cols)\n    \n    # Initialize DBSCAN with the specified parameters\n    dbscan = DBSCAN(eps=3, min_samples=2)\n    \n    # Fit the model and predict clusters\n    df['Cluster'] = dbscan.fit_predict(df[cols])\n    \n    return df",
+      "ttft_speedup": 8.876098613037987
+    }
+  ]
+}
