@@ -17,6 +17,3 @@ python3 -m http.server 8741
 
 Open http://localhost:8741. No build step is required.
 
-## Acknowledgments
-
-Website design is inspired by [OpenVLA](https://openvla.github.io/) and [Nerfies](https://nerfies.github.io/). Resource icons are from [Font Awesome Free 6.7.2](https://github.com/FortAwesome/Font-Awesome/tree/6.7.2); its license is included in `assets/fontawesome-LICENSE.txt`. Affiliation marks belong to the corresponding institutions.
