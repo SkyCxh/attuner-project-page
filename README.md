@@ -1,6 +1,6 @@
 # ATTUNER Project Page
 
-Project website for **ATTUNER: Recomputation-Free KV Cache Reuse via Query-Side Adaptation**.
+Project website for **ATTUNER: Recomputation-Free Agentic Context KV Reuse**.
 
 - [Project page](https://skycxh.github.io/attuner-project-page/)
 - [Paper](https://arxiv.org/abs/2609.36722)
